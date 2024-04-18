@@ -1,0 +1,71 @@
+exp :=
+| { exp_seq }
+
+exp_seq :=
+| { exp_try SEMICOLON exp_seq }
+| { exp_try }
+
+exp_try :=
+| { TRY exp EXCEPT ident ident COLON exp END }
+| { exp_lam }
+
+exp_lam :=
+| { LAMBDA ident COLON exp_lam }
+| { exp_eql }
+
+exp_eql := exp_binop EQUALS exp_gt
+
+exp_gt := exp_binop GREATERTHAN exp_plus
+
+exp_plus := exp_binop PLUS exp_times
+
+exp_times := exp_binop TIMES exp_raise
+
+exp_raise :=
+| { RAISE exp_dot }
+| { exp_dot }
+
+exp_dot :=
+| { exp_basic follow_dot }
+
+follow_dot :=
+| { DOT ident follow_dot }
+| { tuple follow_dot }
+| { list follow_dot }
+| { }
+
+exp_basic :=
+| { ident }
+| { list }
+| { tuple }
+| { int }
+| { str }
+
+binop :=
+| { PLUS }
+| { TIMES }
+| { EQUAL }
+| { GREATERTHAN }
+
+list :=
+| { BRACKETL BRACKETR }
+| { BRACKETL exp list_follow }
+
+list_follow :=
+| { BRACKETR }
+| { COMMA exp list_follow }
+
+tuple :=
+| { PARENL PARENR }
+| { PARENL exp tuple_follow }
+
+tuple_follow :=
+| { PARENR }
+| { COMMA exp tuple_follow }
+
+decl :=
+| { ident ASSIGN exp }
+| { exp list ASSIGN exp }
+| { exp }
+
+program { exp eof }
