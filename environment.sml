@@ -31,7 +31,7 @@ structure Environment = struct
     | Error (ValueError (obj,s))     => invoke scope (apply scope Except.value_exception [obj,Str s]              ) "__raise__"
     | Error (UserError (obj,s))      => raise EvalFailure(term,UserError (obj,s))
     | ex => raise ex
-    fun run scope term = case term of
+    fun run scope term : unit = case term of
       AST.DExp e => (eval scope e; ())
     | AST.DAssign (n,e) => Scope.set scope n (eval scope e)
     | AST.DSet _ => raise Fail "Setting is Unimplemented"
@@ -39,15 +39,24 @@ structure Environment = struct
     | AST.DIf (c,d_if,d_elif,d_else) => if cast_bool scope (eval scope c) then run_all scope d_if else
       ( case d_elif of
         [] => Option.app (run_all scope) d_else
-      | (c,d_if)::d_elif => run scope (c,d_if,d_elif,d_else)
+      | (c,d_if)::d_elif => run scope (AST.DIf (c,d_if,d_elif,d_else))
       )
     | AST.DTry (e,ex,i,n,f) => (
-      ( handle )
+      raise Fail "Try is Unimplemented"
+      (* ( run_all scope e handle ) *)
     )
 
-    fun eval_exp scope tokens = run scope (Parse.parse tokens)
+    and run_all (scope : scope) term : unit = (case term of
+      [] => ()
+    | t::ts => (run scope t; run_all scope ts)
+    )
 
-    fun eval_line scope source = eval_exp scope (Tokenize.tokenize source)
+    fun eval_dexp scope tokens : object = (case Parse.parse tokens of 
+      AST.DExp e => eval scope e
+    | term => (run scope term; None)
+    )
+
+    fun eval_line scope source : object = eval_dexp scope (Tokenize.tokenize source)
 
     fun run_line scope code = print
       (if List.all Char.isSpace (String.explode code) then "" else

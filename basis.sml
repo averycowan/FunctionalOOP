@@ -13,12 +13,15 @@ structure Basis = struct
   | NameError of string
   | TypeError of string
   | IndexError of string * int * int * int
+  | ParseError of string
   fun error_to_string err = case err of
     UserError (obj,str) => str
   | ValueError (obj,str) => "ValueError: " ^ str
   | AttributeError (obj,str) => "AttributeError: " ^ str
+  | NameError str => "NameError: " ^ str
   | TypeError str => "TypeError: " ^ str
   | IndexError (str, i, a, b) => "IndexError: " ^ str ^ " index " ^ Int.toString i ^ " is not in the range " ^ Int.toString a ^ ".." ^ Int.toString b
+  | ParseError str => "ParseError: " ^ str
   exception Error of error
   fun user_error obj str = raise Error (UserError (obj,str))
   fun value_error data = raise Error (ValueError data)
@@ -88,7 +91,15 @@ structure Basis = struct
       a
     end
 
-  fun mkobj get_attribute data class tostr fields methods = Object (mktable get_attribute data class tostr fields methods)
+  fun mkobj 
+    (get_attribute : object -> string -> object)
+    (data : 'a)
+    (class : object)
+    (tostr : scope * 'a * object -> object)
+    (fields : (string * object) list)
+    (methods : (string * ('a * object -> string -> object)) list)
+    : object =
+    Object (mktable get_attribute data class tostr fields methods)
 
   fun get_attribute object name = case object of
     Object data => lookup data name
@@ -254,15 +265,29 @@ structure Basis = struct
   
   fun annot_str s obj = cast_str s (cast_to s Class.Str obj)
 
-  val mktable = fn data => fn class => mktable get_attribute data class
-  val mkobj = fn data => fn class => mkobj get_attribute data class
+  val mktable :
+    (* data : *) 'a ->
+    (* class : *) object ->
+    (* tostr : *) (scope * 'a * object -> object) ->
+    (* fields : *) (string * object) list ->
+    (* methods : *) (string * ('a * object -> string -> object)) list ->
+    object T.table = fn data : 'a => fn class : object => mktable get_attribute data class
+  
+  val mkobj :
+    (* data : *) 'a ->
+    (* class : *) object ->
+    (* tostr : *) (scope * 'a * object -> object) ->
+    (* fields : *) (string * object) list ->
+    (* methods : *) (string * ('a * object -> string -> object)) list ->
+    object = fn data => fn class => mkobj get_attribute data class
 
   fun mkclass
     (classname : string)
     (construct : scope -> object list -> 'a)
     (tostr : scope * 'a * object -> object)
     (fields : (string * ('a -> object)) list)
-    (methods : (string * ('a * object -> string -> object)) list) =
+    (methods : (string * ('a * object -> string -> object)) list)
+    : object =
     let
       val classdata = Class.new classname
       fun new s args =
@@ -280,7 +305,8 @@ structure Basis = struct
     (parent : object)
     (construct : scope -> object list -> 'a * object list)
     (fields : (string * ('a * object D.dict -> object)) list)
-    (methods : (string * ('a * object * object D.dict -> string -> object)) list) =
+    (methods : (string * ('a * object * object D.dict -> string -> object)) list) 
+    : object =
     let
       val classdata = Class.extend (cast_class parent) classname
       fun new s args =
@@ -406,7 +432,7 @@ structure Basis = struct
       T.set env "bool" (Class (Class.Bool, cw mkfun1s "bool" (fn (s,obj) => invoke s obj "__bool__")));
       T.set env "list" (Class (Class.List, cw mkfun1c "list" (fn s => List o cast_list s)));
       T.set env "tuple" (Class (Class.Tuple, cw mkfun1c "tuple" (fn s => Tuple o cast_tuple s)));
-      T.set env "class" (Class (Class.List, cw mkfun1 "class" (fn obj => get_attribute obj "__class__")));
+      T.set env "type" (Class (Class.Class, cw mkfun1 "class" (fn obj => get_attribute obj "__class__")));
       T.set env "True" (Bool true);
       T.set env "False" (Bool false);
       T.set env "len" (bi mkfun1s "len" (fn (s,obj) => invoke s obj "__len__"));
@@ -424,4 +450,5 @@ structure Basis = struct
       T.set env "IndexError" Except.index_exception;
       env
     end
+
 end

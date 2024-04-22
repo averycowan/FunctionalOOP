@@ -2,8 +2,11 @@ structure Tokenize = struct
 
   fun char_to_string c = String.implode [c]
   val char_is_punct = fn #"_" => false | c => Char.isPunct c
-  val parse_error = Basis.parse_error
-
+  fun parse_error str : 'a = 
+    (* let val obj : Object.object = (Basis.mkobj str Basis.Except.parse_exception) in *)
+      (* Basis.user_error obj *)
+    (* end *)
+    raise Basis.Error (Basis.ParseError str)
   datatype token =
     TIdent of string
   | TInt of int

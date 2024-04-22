@@ -1,4 +1,4 @@
-signature PARSE_ARGS = sig
+(* signature PARSE_ARGS = sig
 end
 
 functor Parser(ParseArgs : PARSE_ARGS) = struct
@@ -30,4 +30,4 @@ functor Parser(ParseArgs : PARSE_ARGS) = struct
   | AStateD of state_d * (dec -> 'a)
   | AStateDL of state_dl * (dec list -> 'a)
   type path = content list * 
-end
+end *)

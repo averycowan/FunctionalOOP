@@ -198,7 +198,7 @@ structure Parse = struct
       let
         val stream = List.rev tokens
         val program = parse_program stream SOME (fn () => NONE)
-        fun k () = Basis.parse_error (String.concatWithMap " " token_to_string tokens)
+        fun k () = Tokenize.parse_error (String.concatWithMap " " token_to_string tokens)
       in
         Std.getopt program k
       end

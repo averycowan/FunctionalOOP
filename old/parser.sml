@@ -1,4 +1,4 @@
-structure Parse = struct
+(* structure Parse = struct
   open Std
   open AST
 
@@ -361,4 +361,4 @@ structure Parse = struct
     in
       Std.getopt program k
     end
-end
+end *)
